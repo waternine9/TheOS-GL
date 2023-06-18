@@ -1,8 +1,8 @@
 #include "kernel.hpp"
-#include "idt.hpp"
-#include "pic.hpp"
+#include "memory.hpp"
 
-extern "C" void kmain()
+void
+kmain()
 {
-
+    kmemset((uint8_t*)0x1000000 + 0x7C00, 0, 70000);
 }

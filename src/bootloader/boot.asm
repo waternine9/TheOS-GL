@@ -159,7 +159,6 @@ global rsdp
 %include "src/bootloader/irq_handlers.asm"
 %include "src/bootloader/vesa_vbe_setup_vars.asm"
 
-
 section .text
 
 section .end
