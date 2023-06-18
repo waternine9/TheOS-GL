@@ -31,4 +31,4 @@ void*
 kmalloc(size_t n);
 
 void
-free(void *pointer);
+kfree(void *pointer);

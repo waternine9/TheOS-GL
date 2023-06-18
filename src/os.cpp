@@ -18,7 +18,16 @@ fill_colorful_bitmap_u32(uint32_t *destination, size_t count)
 extern "C" void
 kmain()
 {
-    // PROBE_VALUE(0xABCDEF);
+    kalloc_init();
+    void *pointer_1 = kmalloc(135);
+    kfree(kmalloc(234));
+    kfree(pointer_1);
+
+    void *pointer_3 = kmalloc(144);
+    void *pointer_4 = kmalloc(144);
+    PROBE_VALUE((size_t)pointer_4);
+    PROBE_VALUE((size_t)pointer_3);
+
     fill_colorful_bitmap_u32((uint32_t*)VbeModeInfo.framebuffer, VbeModeInfo.width * VbeModeInfo.height);
 }
 
