@@ -1,6 +1,7 @@
 //
 // TODO
 // - Defragmentation of nodes..
+// - Core protection. (Freeing invalid addresses)
 // 
 
 #include "memory.hpp"
@@ -10,6 +11,7 @@
 #define ONE_GIGABIT 1073741824
 #define MEMORY_LIMIT ONE_GIGABIT
 #define ALIGNMENT 32
+#define SIZE_ALIGNMENT 4096
 #define TAKEN 1
 #define NOT_TAKEN 0
 
@@ -141,7 +143,7 @@ fl_allocate_memory(FreeListAllocator *free_list, size_t size)
     ListNode *closest_node = fl_find_best_fitting_node(free_list, size);
 
     // - Split the node into a smaller size.
-    ListNode *fragmented_node = fl_fragment_node(closest_node, align_size(size, ALIGNMENT));
+    ListNode *fragmented_node = fl_fragment_node(closest_node, align_size(size, SIZE_ALIGNMENT));
     if (fragmented_node != nullptr)
     {
         fl_release_node(free_list, fragmented_node);
