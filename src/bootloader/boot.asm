@@ -215,7 +215,6 @@ global rsdp
 %include "src/boot/irq_handlers.asm"
 %include "src/boot/vbe_setup_vars.asm"
 
-
 section .text
 
 section .end
