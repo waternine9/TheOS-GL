@@ -1,2 +1,2 @@
-./build.sh
-qemu-system-x86_64 bin/boot.img
+sh build.sh
+qemu-system-x86_64 -hda bin/boot.img

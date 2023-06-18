@@ -16,14 +16,15 @@ SECTIONS {
     {
         *(.data)
     }
+    .end :
+    {
+        *(.end)
+    }
     . = 0x1000000 + 0x7C00;
     .bss : 
     {
         *(.bss)
     }
-    .end :
-    {
-        *(.end)
-    }
+    
     
 }

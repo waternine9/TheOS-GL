@@ -32,10 +32,6 @@ jl .loop
 mov [.closestAccum], bx
 mov ax, [VbeCurrentMode]
 mov [.closestModeNumber], ax
-mov ax, [VbeModeInfo.XResolution]
-mov [VESA_RES_X], ax
-mov ax, [VbeModeInfo.YResolution]
-mov [VESA_RES_Y], ax
 
 .loop:
 
@@ -65,11 +61,11 @@ cmp al, 24
 jne .loop
 
 mov ax, [VbeModeInfo.XResolution]
-cmp ax, 1280
+cmp ax, 1366
 jg .loop
 
 mov ax, [VbeModeInfo.YResolution]
-cmp ax, 720
+cmp ax, 768
 jg .loop
 
 ; Check if supports linear frame buffer
@@ -111,7 +107,3 @@ ret
 
 .closestAccum: dw 0x0
 .closestModeNumber: dw -1
-global VESA_RES_X
-global VESA_RES_Y
-VESA_RES_X: dw 0
-VESA_RES_Y: dw 0

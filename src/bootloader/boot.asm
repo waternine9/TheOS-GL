@@ -1,10 +1,7 @@
 [BITS 16]
 section .boot
 
-
 Boot:
-    
-
     ; NOTE: At boot the boot drive number is stored in DL,
     ;       Preserve it for later 
     mov   [DriveNumber], dl
@@ -77,7 +74,7 @@ After:
     mov esp, eax
 
     mov edi, unkernel_end
-    mov ecx, 2
+    mov ecx, 4
 
 .read_loop:
     mov dl, [DriveNumber]
@@ -89,7 +86,7 @@ After:
 
     inc ecx
     add edi, 512
-    cmp edi, OsEnd
+    cmp edi, OsEnd - 512
     jl .read_loop
 
     ; Use scancode set 1 (PS/2 keyboard)
@@ -108,56 +105,19 @@ After:
 times 510-($-$$) db 0
 dw 0xAA55
 
+%include "src/bootloader/vesa_vbe_setup_vars.asm"
+
+times 2048-($-$$) db 0
 unkernel_end:
-
-; Find RSDP
-    mov ecx, 0x2000
-    mov esi, 0xE000
-    RSDPfind:
-    mov es, si
-    mov eax, [es:0]
-    cmp eax, "RSD "
-    jne .NotFound
-    mov eax, [es:4]
-    cmp eax, "PTR "
-    je .Found
-    .NotFound:
-    inc esi
-    loop RSDPfind
-    mov eax, 0xEEEEEE
-    cli
-    hlt
-    .Found:
-    mov edi, rsdp
-    mov esi, 0
-    mov ecx, 24
-    .Copy:
-    mov eax, [es:esi]
-    mov [edi], eax
-    inc esi
-    inc edi
-    loop .Copy
-
-    xor ax, ax
-    mov es, ax
 
 extern kmain
 cli
+
 call kmain
 cli
 hlt
 
-rsdp:
-.Signature times 8 db 0
-.Checksum db 0
-.OEMID times 6 db 0
-.Revision db 0
-.Rsdt dd 0
-
-global rsdp
-
 %include "src/bootloader/irq_handlers.asm"
-%include "src/bootloader/vesa_vbe_setup_vars.asm"
 
 section .text
 
