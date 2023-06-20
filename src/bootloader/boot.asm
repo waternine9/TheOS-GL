@@ -1,10 +1,7 @@
 [BITS 16]
 section .boot
 
-
 Boot:
-    
-
     ; NOTE: At boot the boot drive number is stored in DL,
     ;       Preserve it for later 
     mov   [DriveNumber], dl
