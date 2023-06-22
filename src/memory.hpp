@@ -1,34 +1,23 @@
-#include <cstdint>
-#include <cstddef>
+#ifndef H_TOS_MEMORY
+#define H_TOS_MEMORY
 
-inline static void
-kmemset(void *destination_param, int value, size_t count)
+#include <stdint.h>
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" 
 {
-    uint8_t *destination = (uint8_t*)destination_param;
+#endif // __cplusplus
 
-    for (size_t i = 0; i < count; i++)
-    {
-        destination[i] = value;
-    }
+void  memcpy(void *Destination_, const void *Source_, size_t N);
+void  memset(void *Destination_, uint8_t Val, size_t N);
+void* malloc(size_t Bytes);
+void  free(void *Buf);
+void* memmove(void *dest, const void *src, size_t n);
+int strlen(const char *s);
+
+#ifdef __cplusplus
 }
+#endif // __cplusplus
 
-inline static void
-kmemcpy(void *destination_param, void *source_param, size_t count)
-{
-    uint8_t *destination = (uint8_t*)destination_param;
-    uint8_t *source = (uint8_t*)source_param;
-
-    for (size_t i = 0; i < count; i++)
-    {
-        destination[i] = source[i];
-    }
-}
-
-void
-kalloc_init();
-
-void* 
-kmalloc(size_t n);
-
-void
-kfree(void *pointer);
+#endif // H_TOS_MEMORY

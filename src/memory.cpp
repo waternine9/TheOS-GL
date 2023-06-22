@@ -1,196 +1,115 @@
-//
-// TODO
-// - Defragmentation of nodes..
-// - Core protection. (Freeing invalid addresses)
-// 
-
 #include "memory.hpp"
-#include "debug.hpp"
-
-#define STARTING_LOCATION 0x2000000
-#define ONE_GIGABIT 1073741824
-#define MEMORY_LIMIT ONE_GIGABIT
-#define ALIGNMENT 32
-#define SIZE_ALIGNMENT 4096
-#define TAKEN 1
-#define NOT_TAKEN 0
-
-
-typedef struct list_node {
-    size_t taken;
-    struct list_node *prev;
-    struct list_node *next;
-
-    // NOTE: Size excluding the node size.
-    size_t size; 
-} __attribute__((__aligned__(ALIGNMENT))) ListNode;
-
-typedef struct {
-    ListNode *free_list_start;
-    ListNode *free_list_end;
-} FreeListAllocator;
-
-
-FreeListAllocator FREE_LIST;
-
-static void
-fl_detach_node(ListNode *node) 
+void memcpy(void *Destination_, const void *Source_, size_t N)
 {
-    ListNode *prev = node->prev;
-    if (prev) {
-        prev->next = node->next;
+    uint8_t *Destination = (uint8_t*)Destination_;
+    const uint8_t *Source = (uint8_t*)Source_;
+    while (N--) {
+        *Destination++ = *Source++;
     }
-
-    ListNode *next = node->next;
-    if (next) {
-        next->prev = node->prev;
+}
+void memset(void *Destination_, uint8_t Val, size_t N)
+{
+    uint8_t *Destination = (uint8_t*)Destination_;
+    while (N--) {
+        *Destination++ = Val;
     }
-
-    node->prev = nullptr;
-    node->next = nullptr;
 }
 
-static void
-fl_claim_node(FreeListAllocator *free_list, ListNode *node)
+// Each page is 4 kb
+uint8_t Pages[1000000] = { 0 };
+
+uint8_t IsInit = 0;
+
+void *malloc(size_t Bytes)
 {
-    // - Check if any node is in internal free list structures.
-    if (free_list->free_list_start == node) {
-        free_list->free_list_start = node->next;
-    }
-
-    if (free_list->free_list_end == node) {
-        free_list->free_list_end = node->prev;
-    }
-
-    // - Detach the node from other nodes in the free list.
-    fl_detach_node(node);
-
-    // - Claim the node.
-    node->taken = TAKEN;
-}
-
-static void
-fl_release_node(FreeListAllocator *free_list, ListNode *node)
-{
-    // - Connect to free list's internal structures.
-    node->prev = free_list->free_list_end;
-    free_list->free_list_end->next = node;
-    free_list->free_list_end = node;
-
-    // - Release the node.
-    node->taken = NOT_TAKEN;
-}
-
-static ListNode*
-fl_find_best_fitting_node(FreeListAllocator *free_list, size_t size)
-{
-    ListNode *closest_node = free_list->free_list_start;
-    size_t closest_node_size = closest_node->size;
-    
-    for (ListNode *current_node = closest_node; current_node != nullptr; current_node = current_node->next)
+    if (!IsInit)
     {
-        if (current_node->size >= size && current_node->size < closest_node_size)
+        memset(Pages, 0, 1000000);
+        IsInit = 1;
+    }
+    size_t PageCount = Bytes / 4096 + 1; 
+    for (int i = 0;i < 1000000;i++)
+    {
+        if (!Pages[i])
         {
-            closest_node = current_node;
-            closest_node_size = current_node->size;
+            uint8_t Found = 1;
+            for (int j = i;j < i + PageCount;j++)
+            {
+
+
+                if (Pages[j])
+                {
+                    i = j;
+                    Found = 0;
+                    break; 
+                }
+            }
+            if (Found)
+            {
+
+                for (int j = i;j < i + PageCount;j++)
+                {
+                    Pages[j] = 1;
+                }
+                *(uint32_t*)(i * 4096 + 0x2000000) = Bytes;
+                return (uint32_t*)(i * 4096 + 0x2000000 + 4);
+            }
         }
     }
-
-    return closest_node;
+    return (uint32_t*)0;
 }
-
-static size_t
-align_size(size_t size, size_t alignment)
+void free(void *Buf)
 {
-    return (size/alignment + 1)*alignment;
-}
+    size_t PageCount = *((uint32_t*)Buf - 1) / 4096 + 1;
 
-static void*
-get_node_data(ListNode *node)
-{
-    return (void*)(node+1);
-}
-
-static ListNode*
-fl_fragment_node(ListNode *node, size_t size)
-{
-    // - Check if there's enough memory in the node.
-    if (node->size <= (size + sizeof(ListNode))) {
-        return nullptr;
-    }
-
-    // - Allocate the new node.
-    uint8_t *data = (uint8_t*)get_node_data(node);
-    ListNode *new_node = (ListNode*)(data + size);
-
-    // - Create the new node.
-    new_node->taken = NOT_TAKEN;
-    new_node->prev = nullptr;
-    new_node->next = nullptr;
-    new_node->size = node->size - size - sizeof(ListNode);
-
-    // - Resize the original node.
-    node->size = size;
-
-    // - Give new node to the user.
-    return new_node;
-}
-
-static void*
-fl_allocate_memory(FreeListAllocator *free_list, size_t size)
-{
-    // - Find best fitting node.
-    ListNode *closest_node = fl_find_best_fitting_node(free_list, size);
-
-    // - Split the node into a smaller size.
-    ListNode *fragmented_node = fl_fragment_node(closest_node, align_size(size, SIZE_ALIGNMENT));
-    if (fragmented_node != nullptr)
-    {
-        fl_release_node(free_list, fragmented_node);
-    }
+    uint32_t Page = ((uint32_t)Buf - 0x2000004) / 4096;
     
-    // - Claim the closest node.
-    fl_claim_node(free_list, closest_node);
-
-    // - Return the data after the node.
-    return get_node_data(closest_node);
+    for (uint32_t i = Page;i < Page + PageCount;i++)
+    {
+        Pages[i] = 0;
+    }
 }
 
-static void
-fl_deallocate_memory(FreeListAllocator *free_list, void *ptr)
+void *memmove(void *dest, const void *src, size_t n)
 {
-    // - Get list node from data pointer.
-    ListNode *node = (ListNode*)(ptr) - 1;
+    uint8_t* from = (uint8_t*) src;
+    uint8_t* to = (uint8_t*) dest;
 
-    // - Release the node.
-    fl_release_node(free_list, node);
+    if (from == to || n == 0)
+        return dest;
+    if (to > from && to-from < (int)n) {
+        /* to overlaps with from */
+        /*  <from......>         */
+        /*         <to........>  */
+        /* copy in reverse, to avoid overwriting from */
+        int i;
+        for(i=n-1; i>=0; i--)
+            to[i] = from[i];
+        return dest;
+    }
+    if (from > to && from-to < (int)n) {
+        /* to overlaps with from */
+        /*        <from......>   */
+        /*  <to........>         */
+        /* copy forwards, to avoid overwriting from */
+        size_t i;
+        for(i=0; i<n; i++)
+            to[i] = from[i];
+        return dest;
+    }
+    memcpy(dest, src, n);
+    return dest;
 }
 
-void
-kalloc_init()
+int 
+strlen(const char *s)
 {
-    // - Set up first node.
-    ListNode *first_node = (ListNode*)STARTING_LOCATION;
+    int len = 0;
+    
+    while (*s) {
+        len++;
+        s++;
+    }
 
-    // - Initialize first node.
-    first_node->taken = NOT_TAKEN;
-    first_node->prev = nullptr;
-    first_node->next = nullptr;
-    first_node->size = ONE_GIGABIT - sizeof(ListNode);
-
-    // - Set up pointers.
-    FREE_LIST.free_list_start = first_node;
-    FREE_LIST.free_list_end = first_node;
-}
-
-void* 
-kmalloc(size_t n)
-{
-    return(fl_allocate_memory(&FREE_LIST, n));
-}
-
-void
-kfree(void *pointer)
-{
-    fl_deallocate_memory(&FREE_LIST, pointer);
+    return len;
 }
