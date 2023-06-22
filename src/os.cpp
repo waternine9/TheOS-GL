@@ -10,7 +10,7 @@
 
 volatile void DisplayBuffer(volatile uint32_t* Buff)
 {
-    volatile uint8_t* VesaFramebuff = (volatile uint8_t*)VbeModeInfo.framebuffer;
+    uint8_t* VesaFramebuff = (uint8_t*)VbeModeInfo.framebuffer;
     for (int i = 0;i < RESX * RESY;i++)
     {
         VesaFramebuff[2] = (Buff[i] >> 24);
@@ -32,15 +32,15 @@ kmain()
 
     glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
 
-    volatile uint32_t* GLframe = glGetFramePtr();
+    uint32_t* GLframe = glGetFramePtr();
 
-    const char* VertexShaderSource = "layout(location = 0) vec3 InPos;\nlayout(location = 1) vec3 InCol;\nout vec3 Bruh;\nint main(){\ngl_Position = vec4(InPos.x / 2.0, InPos.y, InPos.z, 1.5);\nBruh = InCol;\n}";
+    const char* VertexShaderSource = "layout(location = 0) vec3 InPos;\nlayout(location = 1) vec3 InCol;\nout vec3 Bruh;\nint main(){\ngl_Position = vec4(InPos.x / 1.0, InPos.y, InPos.z, 1.0);\nBruh = InCol;\n}";
     
     GLuint VertShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(VertShader, 1, &VertexShaderSource, 0);
     glCompileShader(VertShader);
 
-    const char* FragShaderSource = "out vec4 OutColor;\nin vec3 Bruh;\nuniform sampler2D Texture;\nint main(){\nOutColor = texture(Texture, Bruh.xy * vec2(10.0, 10.0));\n}";
+    const char* FragShaderSource = "out vec4 OutColor;\nin vec3 Bruh;\nuniform sampler2D Texture;\nint main(){\nOutColor = texture(Texture, Bruh.xy * vec2(2.0, 2.2));\n}";
     
     GLuint FragShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(FragShader, 1, &FragShaderSource, 0);
@@ -63,9 +63,12 @@ kmain()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
     float vertices[] = {
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f
+        1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+        -1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+        -1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f
     };
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -99,8 +102,7 @@ kmain()
         
         
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
+        glDrawArrays(GL_TRIANGLES, 0, 6);
         DisplayBuffer(GLframe);
     }
 }
