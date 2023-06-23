@@ -92,7 +92,7 @@ extern "C" {
 	*/
 
 	GLuint glCreateShader(GLenum type);
-	void glShaderSource(GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
+	void glShaderSource(GLuint shader, const GLchar* string);
 	void glCompileShader(GLuint shader);
 	void glDeleteShader(GLuint shader);
 

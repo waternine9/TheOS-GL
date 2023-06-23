@@ -1,7 +1,6 @@
 #include "swgl.h"
 
-// #include <memory.h> // Comment this line out for freestanding, you'll have to include your header files though that should allow malloc, memcpy, memset, and free.
-#include "../memory.hpp"
+#include "../memory.hpp" // Comment this line out for freestanding, you'll have to include your header files though that should allow malloc, memcpy, memset, and free.
 
 /*
 * HELPER CONSTANTS
@@ -228,6 +227,7 @@ _String* CString2String(const char* _Str)
 
 uint8_t StringEquals(_String* _A, const char* _B)
 {
+	if (!_A) return 0;
 	for (int i = 0; i < _A->Size; i++)
 	{
 		if (!_B[i]) return 0;
@@ -1123,9 +1123,8 @@ glslToken* GLSLTokenizeSubExpr(glslTokenizer* Tokenizer, glslScope* Scope, int E
 
 	glslType TypeFromStr = GetTypeFromStr(ParenStr);
 
-	if (TypeFromStr != GLSL_UNKNOWN || StringEquals(ParenStr, "texture"))
+	if (TypeFromStr != GLSL_UNKNOWN)
 	{
-
 		Tokenizer->At = NextBeginParen;
 
 		int NextCloseParen = GLSLTellNextMatching(Tokenizer, '(', ')');
@@ -1133,14 +1132,6 @@ glslToken* GLSLTokenizeSubExpr(glslTokenizer* Tokenizer, glslScope* Scope, int E
 		Tokenizer->At++;
 		glslToken* OutTok = GLSLTokenizeArgs(Tokenizer, Scope, NextCloseParen);
 
-		if (StringEquals(ParenStr, "texture"))
-		{
-			if (OutTok->Args->Size != 2)
-			{
-				return 0;
-			}
-			OutTok->Type = GLSL_TOK_TEXTURE;
-		}
 		if (TypeFromStr == GLSL_FLOAT)
 		{
 			if (OutTok->Args->Size != 1)
@@ -1181,6 +1172,69 @@ glslToken* GLSLTokenizeSubExpr(glslTokenizer* Tokenizer, glslScope* Scope, int E
 			}
 			OutTok->Type = GLSL_TOK_INT_CONSTRUCT;
 		}
+		Tokenizer->At = EndAt + 1;
+		return OutTok;
+	}
+	if (StringEquals(ParenStr, "texture"))
+	{
+		Tokenizer->At = NextBeginParen;
+
+		int NextCloseParen = GLSLTellNextMatching(Tokenizer, '(', ')');
+
+		Tokenizer->At++;
+		glslToken* OutTok = GLSLTokenizeArgs(Tokenizer, Scope, NextCloseParen);
+
+		if (OutTok->Args->Size != 2)
+		{
+			return 0;
+		}
+
+		OutTok->Type = GLSL_TOK_TEXTURE;
+
+		if (Swizzle != -1)
+		{
+			glslToken* SwizzleTok = (glslToken*)malloc(sizeof(glslToken));
+
+			SwizzleTok->Swizzle = NewVector(sizeof(int));
+
+			SwizzleTok->Type = GLSL_TOK_SWIZZLE;
+			SwizzleTok->First = OutTok;
+			for (int i = Swizzle; i < EndAt; i++)
+			{
+				char SwizzleChar = StringGet(Tokenizer->Code, i);
+
+				if (SwizzleChar == 'x' || SwizzleChar == 's')
+				{
+					int Zero = 0;
+					VectorPushBack(SwizzleTok->Swizzle, &Zero);
+				}
+				else if (SwizzleChar == 'y' || SwizzleChar == 't')
+				{
+					int One = 1;
+					VectorPushBack(SwizzleTok->Swizzle, &One);
+				}
+				else if (SwizzleChar == 'z')
+				{
+					int Two = 2;
+					VectorPushBack(SwizzleTok->Swizzle, &Two);
+				}
+				else if (SwizzleChar == 'w')
+				{
+					int Three = 3;
+					VectorPushBack(SwizzleTok->Swizzle, &Three);
+				}
+				else if (SwizzleChar == ' ')
+				{
+					break;
+				}
+				else
+				{
+					return 0;
+				}
+			}
+			OutTok = SwizzleTok;
+		}
+
 		Tokenizer->At = EndAt + 1;
 		return OutTok;
 	}
@@ -1813,9 +1867,6 @@ void AssignToExVal(glslVariable* AssignTo, glslExValue Val)
 {
 	VerifyVar(AssignTo);
 
-
-				//asm volatile ("cli\nhlt\n" :: "a"((int)(0xFAFA)));
-
 	if (AssignTo->Type != Val.Type && !(AssignTo->Type == GLSL_SAMPLER2D && Val.Type == GLSL_INT))
 	{
 		return;
@@ -1823,74 +1874,74 @@ void AssignToExVal(glslVariable* AssignTo, glslExValue Val)
 
 	if (Val.Type == GLSL_FLOAT)
 	{
-		((volatile float*)AssignTo->Value.Data)[0] = Val.x;
+		((float*)AssignTo->Value.Data)[0] = Val.x;
 	}
 
 	else if (Val.Type == GLSL_VEC2)
 	{
-		((volatile float*)AssignTo->Value.Data)[0] = Val.x;
-		((volatile float*)AssignTo->Value.Data)[1] = Val.y;
+		((float*)AssignTo->Value.Data)[0] = Val.x;
+		((float*)AssignTo->Value.Data)[1] = Val.y;
 	}
 
 	else if (Val.Type == GLSL_VEC3)
 	{
-		((volatile float*)AssignTo->Value.Data)[0] = Val.x;
-		((volatile float*)AssignTo->Value.Data)[1] = Val.y;
-		((volatile float*)AssignTo->Value.Data)[2] = Val.z;
+		((float*)AssignTo->Value.Data)[0] = Val.x;
+		((float*)AssignTo->Value.Data)[1] = Val.y;
+		((float*)AssignTo->Value.Data)[2] = Val.z;
 	}
 
 	else if (Val.Type == GLSL_VEC4)
 	{
-		((volatile float*)AssignTo->Value.Data)[0] = Val.x;
-		((volatile float*)AssignTo->Value.Data)[1] = Val.y;
-		((volatile float*)AssignTo->Value.Data)[2] = Val.z;
-		((volatile float*)AssignTo->Value.Data)[3] = Val.w;
+		((float*)AssignTo->Value.Data)[0] = Val.x;
+		((float*)AssignTo->Value.Data)[1] = Val.y;
+		((float*)AssignTo->Value.Data)[2] = Val.z;
+		((float*)AssignTo->Value.Data)[3] = Val.w;
 	}
 
 	else if (Val.Type == GLSL_INT)
 	{
-		((volatile int*)AssignTo->Value.Data)[0] = Val.i;
+		((int*)AssignTo->Value.Data)[0] = Val.i;
 	}
 
 	else if (Val.Type == GLSL_MAT2)
 	{
-		((volatile float*)AssignTo->Value.Data)[0] = Val.Mat2.m00;
-		((volatile float*)AssignTo->Value.Data)[1] = Val.Mat2.m01;
-		((volatile float*)AssignTo->Value.Data)[2] = Val.Mat2.m10;
-		((volatile float*)AssignTo->Value.Data)[3] = Val.Mat2.m11;
+		((float*)AssignTo->Value.Data)[0] = Val.Mat2.m00;
+		((float*)AssignTo->Value.Data)[1] = Val.Mat2.m01;
+		((float*)AssignTo->Value.Data)[2] = Val.Mat2.m10;
+		((float*)AssignTo->Value.Data)[3] = Val.Mat2.m11;
 	}
 
 	else if (Val.Type == GLSL_MAT3)
 	{
-		((volatile float*)AssignTo->Value.Data)[0] = Val.Mat3.m00;
-		((volatile float*)AssignTo->Value.Data)[1] = Val.Mat3.m01;
-		((volatile float*)AssignTo->Value.Data)[2] = Val.Mat3.m02;
-		((volatile float*)AssignTo->Value.Data)[3] = Val.Mat3.m10;
-		((volatile float*)AssignTo->Value.Data)[4] = Val.Mat3.m11;
-		((volatile float*)AssignTo->Value.Data)[5] = Val.Mat3.m12;
-		((volatile float*)AssignTo->Value.Data)[6] = Val.Mat3.m20;
-		((volatile float*)AssignTo->Value.Data)[7] = Val.Mat3.m21;
-		((volatile float*)AssignTo->Value.Data)[8] = Val.Mat3.m22;
+		((float*)AssignTo->Value.Data)[0] = Val.Mat3.m00;
+		((float*)AssignTo->Value.Data)[1] = Val.Mat3.m01;
+		((float*)AssignTo->Value.Data)[2] = Val.Mat3.m02;
+		((float*)AssignTo->Value.Data)[3] = Val.Mat3.m10;
+		((float*)AssignTo->Value.Data)[4] = Val.Mat3.m11;
+		((float*)AssignTo->Value.Data)[5] = Val.Mat3.m12;
+		((float*)AssignTo->Value.Data)[6] = Val.Mat3.m20;
+		((float*)AssignTo->Value.Data)[7] = Val.Mat3.m21;
+		((float*)AssignTo->Value.Data)[8] = Val.Mat3.m22;
 	}
 
 	else if (Val.Type == GLSL_MAT4)
 	{
-		((volatile float*)AssignTo->Value.Data)[0] = Val.Mat4.m00;
-		((volatile float*)AssignTo->Value.Data)[1] = Val.Mat4.m01;
-		((volatile float*)AssignTo->Value.Data)[2] = Val.Mat4.m02;
-		((volatile float*)AssignTo->Value.Data)[3] = Val.Mat4.m03;
-		((volatile float*)AssignTo->Value.Data)[4] = Val.Mat4.m10;
-		((volatile float*)AssignTo->Value.Data)[5] = Val.Mat4.m11;
-		((volatile float*)AssignTo->Value.Data)[6] = Val.Mat4.m12;
-		((volatile float*)AssignTo->Value.Data)[7] = Val.Mat4.m13;
-		((volatile float*)AssignTo->Value.Data)[8] = Val.Mat4.m20;
-		((volatile float*)AssignTo->Value.Data)[9] = Val.Mat4.m21;
-		((volatile float*)AssignTo->Value.Data)[10] = Val.Mat4.m22;
-		((volatile float*)AssignTo->Value.Data)[11] = Val.Mat4.m23;
-		((volatile float*)AssignTo->Value.Data)[12] = Val.Mat4.m30;
-		((volatile float*)AssignTo->Value.Data)[13] = Val.Mat4.m31;
-		((volatile float*)AssignTo->Value.Data)[14] = Val.Mat4.m32;
-		((volatile float*)AssignTo->Value.Data)[15] = Val.Mat4.m33;
+		((float*)AssignTo->Value.Data)[0] = Val.Mat4.m00;
+		((float*)AssignTo->Value.Data)[1] = Val.Mat4.m01;
+		((float*)AssignTo->Value.Data)[2] = Val.Mat4.m02;
+		((float*)AssignTo->Value.Data)[3] = Val.Mat4.m03;
+		((float*)AssignTo->Value.Data)[4] = Val.Mat4.m10;
+		((float*)AssignTo->Value.Data)[5] = Val.Mat4.m11;
+		((float*)AssignTo->Value.Data)[6] = Val.Mat4.m12;
+		((float*)AssignTo->Value.Data)[7] = Val.Mat4.m13;
+		((float*)AssignTo->Value.Data)[8] = Val.Mat4.m20;
+		((float*)AssignTo->Value.Data)[9] = Val.Mat4.m21;
+		((float*)AssignTo->Value.Data)[10] = Val.Mat4.m22;
+		((float*)AssignTo->Value.Data)[11] = Val.Mat4.m23;
+		((float*)AssignTo->Value.Data)[12] = Val.Mat4.m30;
+		((float*)AssignTo->Value.Data)[13] = Val.Mat4.m31;
+		((float*)AssignTo->Value.Data)[14] = Val.Mat4.m32;
+		((float*)AssignTo->Value.Data)[15] = Val.Mat4.m33;
 	}
 }
 
@@ -1972,7 +2023,7 @@ void glBindTexture(GLenum target, GLuint texture)
 		else
 		{
 			VectorRead(GlobalTextures, &ActiveTexture2D, texture - 1);
-			TextureUnits[ActiveTextureUnit] = ActiveTexture2D;
+			VectorRead(GlobalTextures, &TextureUnits[ActiveTextureUnit], texture - 1);
 		}
 	}
 }
@@ -2339,6 +2390,7 @@ glslExValue ExecuteGLSLToken(glslToken* Token)
 	}
 	else if (Token->Type == GLSL_TOK_TEXTURE)
 	{
+
 		glslToken* TokArg;
 
 		VectorRead(Token->Args, &TokArg, 0);
@@ -2568,23 +2620,9 @@ GLuint glCreateShader(GLenum type)
 	return GlobalShaders->Size - 1;
 }
 
-void glShaderSource(GLuint shader, GLsizei count, const GLchar** string, const GLint* length)
+void glShaderSource(GLuint shader, const GLchar* string)
 {
-	_String* ShaderCode = NewString();
-	for (int i = 0; i < count; i++)
-	{
-		if (!length)
-		{
-			StringAppend(ShaderCode, CString2String((const char*)string[i]));
-		}
-		else
-		{
-			for (int j = 0; j < length[i]; j++)
-			{
-				StringPush(ShaderCode, string[i][j]);
-			}
-		}
-	}
+	_String* ShaderCode = CString2String((const char*)string);
 
 	RawShader* TargetShader;
 
@@ -3089,6 +3127,16 @@ void DrawTriangle(glslVec4* Coords, _Vector** CoordData)
 						OutB = MIN(MAX(OutB, 0.0f), 1.0f);
 						OutA = MIN(MAX(OutA, 0.0f), 1.0f);
 
+						float CurR = ((*CurCol >> 24) & 0xFF) / 255.0f;
+						float CurG = ((*CurCol >> 16) & 0xFF) / 255.0f;
+						float CurB = ((*CurCol >> 8) & 0xFF) / 255.0f;
+						float CurA = (*CurCol & 0xFF) / 255.0f;
+
+						OutR = CurR + OutA * (OutR - CurR);
+						OutG = CurG + OutA * (OutG - CurG);
+						OutB = CurB + OutA * (OutB - CurB);
+						OutA = CurA + OutA * (OutA - CurA);
+
 						uint32_t Color;
 
 						if (GlobalFramebuffer->ColorFormat == GL_RGB)
@@ -3119,7 +3167,6 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
 	if (!ActiveVertexArray) return;
 	if (!ActiveProgram) return;
-
 
 	glslVariable* glPositionVar = 0;
 
@@ -3321,7 +3368,6 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 
 			Triangle Triangles[2];
 			int nTri = ClipTriangleAgainstNearPlane(&MyTri, Triangles);
-
 			for (int k = 0; k < nTri; k++)
 			{
 				Triangle Tri = Triangles[k];

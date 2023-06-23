@@ -20,12 +20,16 @@ volatile void DisplayBuffer(volatile uint32_t* Buff)
         VesaFramebuff += 3;
     }
 }
+static const char* FragShaderSource = "out vec4 OutColor;\nin vec3 Bruh;\nuniform sampler2D Texture;\nint main(){\nOutColor = texture(Texture, Bruh.xy).xxxx;\n}";
 
-extern "C" void
-kmain()
+static const char* VertexShaderSource = "layout(location = 0) vec3 InPos;\nlayout(location = 1) vec3 InCol;\nout vec3 Bruh;\nint main(){\ngl_Position = vec4(InPos.x, InPos.y, InPos.z, 1.0);\nBruh = InCol;\n}";
+
+extern "C" void kmain()
 {
-    memset((uint8_t*)0x1000000 + 0x7C00, 0, 70000);
+    memset((uint8_t*)0x1000000 + 0x7C00, 0, 100000);
     
+    allocInit();
+
     glInit(RESX, RESY);
 
     glViewport(0, 0, RESX, RESY);
@@ -34,16 +38,15 @@ kmain()
 
     uint32_t* GLframe = glGetFramePtr();
 
-    const char* VertexShaderSource = "layout(location = 0) vec3 InPos;\nlayout(location = 1) vec3 InCol;\nout vec3 Bruh;\nint main(){\ngl_Position = vec4(InPos.x / 1.0, InPos.y, InPos.z, 1.0);\nBruh = InCol;\n}";
     
     GLuint VertShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(VertShader, 1, &VertexShaderSource, 0);
+    glShaderSource(VertShader, VertexShaderSource);
     glCompileShader(VertShader);
 
-    const char* FragShaderSource = "out vec4 OutColor;\nin vec3 Bruh;\nuniform sampler2D Texture;\nint main(){\nOutColor = texture(Texture, Bruh.xy * vec2(2.0, 2.2));\n}";
+    
     
     GLuint FragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(FragShader, 1, &FragShaderSource, 0);
+    glShaderSource(FragShader, FragShaderSource);
     glCompileShader(FragShader);
 
     GLuint Program = glCreateProgram();
@@ -94,6 +97,7 @@ kmain()
 
     GLuint TextureLoc = glGetUniformLocation(Program, "Texture");
     glUniform1i(TextureLoc, 0);
+
 
     while (true)
     {

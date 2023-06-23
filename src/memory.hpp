@@ -15,6 +15,7 @@ void* malloc(size_t Bytes);
 void  free(void *Buf);
 void* memmove(void *dest, const void *src, size_t n);
 int strlen(const char *s);
+void allocInit();
 
 #ifdef __cplusplus
 }

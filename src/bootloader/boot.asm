@@ -70,11 +70,11 @@ After:
     mov   gs, ax
     mov   ss, ax
 
-    mov eax, 0x1000000
+    mov eax, unkernel_end
     mov esp, eax
 
     mov edi, unkernel_end
-    mov ecx, 4
+    mov ecx, 32
 
 .read_loop:
     mov dl, [DriveNumber]
@@ -86,7 +86,7 @@ After:
 
     inc ecx
     add edi, 512
-    cmp edi, OsEnd - 512
+    cmp edi, OsEnd
     jl .read_loop
 
     ; Use scancode set 1 (PS/2 keyboard)
@@ -107,7 +107,7 @@ dw 0xAA55
 
 %include "src/bootloader/vesa_vbe_setup_vars.asm"
 
-times 2048-($-$$) db 0
+times (16384-($-$$)) db 0
 unkernel_end:
 
 extern kmain
