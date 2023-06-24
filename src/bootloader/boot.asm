@@ -121,5 +121,10 @@ hlt
 
 section .text
 
+section .glyphs
+global GlyphLabel
+GlyphLabel:
+incbin "bin/glyphs.bin"
+
 section .end
 OsEnd:

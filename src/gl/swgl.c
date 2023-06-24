@@ -3210,7 +3210,7 @@ void DrawTriangle(glslVec4* Coords, _Vector** CoordData)
 						OutG = MIN(MAX(OutG, 0.0f), 1.0f);
 						OutB = MIN(MAX(OutB, 0.0f), 1.0f);
 						OutA = MIN(MAX(OutA, 0.0f), 1.0f);
-						OutA = MIN((MIN(MIN(MIN(u, 1.0f - u), MIN(v, 1.0f - v)), MIN(w, 1.0f - w))) * 400.0f, 1.0f);
+						// OutA *= MIN((MIN(MIN(MIN(u, 1.0f - u), MIN(v, 1.0f - v)), MIN(w, 1.0f - w))) * 750.0f, 1.0f); // UNCOMMENT FOR AA
 
 						float CurR = ((*CurCol >> 24) & 0xFF) / 255.0f;
 						float CurG = ((*CurCol >> 16) & 0xFF) / 255.0f;

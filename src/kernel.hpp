@@ -1,3 +1,6 @@
+#ifndef H_TOS_KERNEL
+#define H_TOS_KERNEL
+
 #include <cstdint>
 
 typedef struct {
@@ -39,3 +42,7 @@ typedef struct {
 } __attribute__ ((packed)) vesa_vbe_mode_info;
 
 extern vesa_vbe_mode_info VbeModeInfo;
+
+extern void* GlyphLabel;
+
+#endif // H_TOS_KERNEL

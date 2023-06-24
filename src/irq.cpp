@@ -1,4 +1,14 @@
 #include "pic.hpp"
+#include "drivers/keyboard/keyboard.hpp"
+#include "mutex.hpp"
+#include "io.hpp"
+
+int32_t MouseX;
+int32_t MouseY;
+uint8_t MouseLmbClicked;
+uint8_t MouseRmbClicked;
+
+mutex PS2Mutex = { { false } };
 
 /* PIT Timer */
 extern "C" void CHandlerIRQ0()
@@ -8,6 +18,7 @@ extern "C" void CHandlerIRQ0()
 /* Keyboard Interrupt */
 extern "C" void CHandlerIRQ1()
 {
+    Keyboard_HandleInterrupt();
     PIC_EndOfInterrupt(1);
 }
 /* Channel for Secondary PIC, don't use. */
@@ -60,9 +71,25 @@ extern "C" void CHandlerIRQ11()
 {
     PIC_EndOfInterrupt(11);
 }
+static uint8_t IsFull() {
+    return IO_In8(0x64)&1;
+}
 /* PS/2 Mouse */
 extern "C" void CHandlerIRQ12()
 {
+    MutexLock(&PS2Mutex);
+    while (IsFull())
+    {
+        uint8_t Byte0 = IO_In8(0x60);
+        int8_t Byte1 = IO_In8(0x60);
+        int8_t Byte2 = IO_In8(0x60);
+        if ((Byte0 & 1) && Byte1 == 0 && Byte2 == 0) MouseLmbClicked = 1;
+        if ((Byte0 & 2) && Byte1 == 0 && Byte2 == 0) MouseRmbClicked = 1;
+        MouseX += Byte1;
+        MouseY -= Byte2;
+    }
+    MutexRelease(&PS2Mutex);
+
     PIC_EndOfInterrupt(12);
 }
 /* FPU */
