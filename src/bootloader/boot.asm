@@ -126,5 +126,10 @@ global GlyphLabel
 GlyphLabel:
 incbin "bin/glyphs.bin"
 
+section .images
+global ImageLabel
+ImageLabel:
+incbin "bin/images.bin"
+
 section .end
 OsEnd:

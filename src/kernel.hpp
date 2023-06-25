@@ -44,5 +44,6 @@ typedef struct {
 extern vesa_vbe_mode_info VbeModeInfo;
 
 extern void* GlyphLabel;
+extern void* ImageLabel;
 
 #endif // H_TOS_KERNEL

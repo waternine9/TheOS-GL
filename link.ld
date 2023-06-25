@@ -6,7 +6,9 @@ SECTIONS {
     .boot :
     {
         *(.boot)
-        *(.text)   
+        *(.text)  
+        *(.glyphs)
+        *(.images) 
     }
     .rodata : 
     {

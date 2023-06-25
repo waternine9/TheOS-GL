@@ -4,8 +4,8 @@
 #define SWGL_FREESTANDING
 #include "gl/swgl.h"
 
-int RESX;
-int RESY;
+extern uint32_t RESX;
+extern uint32_t RESY;
 
 void DisplayBuffer(uint32_t* Buff)
 {
@@ -23,7 +23,7 @@ void DisplayBuffer(uint32_t* Buff)
 static const char* BGFragShaderSource = "out vec4 OutColor;\nin vec3 FragColor;\nint main(){\nOutColor = vec4(FragColor.x, FragColor.y, FragColor.z, 1.0);\n}";
 static const char* BGVertexShaderSource = "layout(location = 0) vec3 InPos;\nlayout(location = 1) vec3 InCol;\nout vec3 FragColor;\nint main(){\ngl_Position = vec4(InPos.x, InPos.y, InPos.z, 1.0);\nFragColor = InCol.xyz;\n}";
 static const char* GlyphFragShaderSource = "out vec4 OutColor;\nin vec2 UV;\nuniform vec4 Color;\nuniform sampler2D Glyph;\nint main(){\nOutColor = texture(Glyph, UV) * Color;}";
-static const char* GlyphVertexShaderSource = "layout(location = 0) vec3 InPos;\nlayout(location = 1) vec2 InUV;\nuniform float Scale;\nuniform vec2 Pos;\nout vec2 UV;\nint main(){\ngl_Position = vec4(InPos.x * Scale + Pos.x, InPos.y * Scale + Pos.y, InPos.z, 1.0);UV = InUV;}";
+static const char* GlyphVertexShaderSource = "layout(location = 0) vec3 InPos;\nlayout(location = 1) vec2 InUV;\nout vec2 UV;\nint main(){\ngl_Position = vec4(InPos.x, InPos.y, InPos.z, 1.0);UV = InUV;}";
 
 GLuint BGFragShader, BGVertShader, GlyphFragShader, GlyphVertShader;
 GLuint BGProgram, GlyphProgram;
@@ -32,12 +32,11 @@ GLuint BGVAO, BGVBO;
 GLuint GlyphVAO, GlyphVBO;
 
 GLuint GlyphTextures[256];
+GLuint CursorTexture;
 
-volatile void Renderer::Init(int width, int height)
+volatile void Renderer::Init()
 {
-    RESX = width;
-    RESY = height;
-    glInit(width, height);
+    glInit(RESX, RESY);
     glViewport(0, 0, RESX, RESY);
 
     BGVertShader = glCreateShader(GL_VERTEX_SHADER);
@@ -93,10 +92,10 @@ volatile void Renderer::Init(int width, int height)
 
     float Glyphvertices[] = {
         -1.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-        0.5f, 1.0f, 0.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
         -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
-        0.5f, -1.0f, 0.0f, 1.0f, 1.0f,
-        0.5f, 1.0f, 0.0f, 1.0f, 0.0f,
+        1.0f, -1.0f, 0.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
         -1.0f, -1.0f, 0.0f, 0.0f, 1.0f
     };
 
@@ -110,7 +109,13 @@ volatile void Renderer::Init(int width, int height)
         glGenTextures(1, &GlyphTextures[i]);
         glBindTexture(GL_TEXTURE_2D, GlyphTextures[i]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 80, 160, 0, GL_RGBA, GL_UNSIGNED_BYTE, (uint8_t*)(&GlyphLabel) + i * 80 * 160 * 4);
+        glGenerateMipmap(GL_TEXTURE_2D);
     }
+
+    glGenTextures(1, &CursorTexture);
+    glBindTexture(GL_TEXTURE_2D, CursorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 32, 48, 0, GL_RGBA, GL_UNSIGNED_BYTE, (uint8_t*)(&ImageLabel));
+    glGenerateMipmap(GL_TEXTURE_2D);
 }
 volatile void Renderer::ClearScreen(float red, float green, float blue, float alpha)
 {
@@ -123,7 +128,7 @@ volatile void Renderer::DrawBackground()
     glBindVertexArray(BGVAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 }
-volatile void Renderer::DrawLetter(char letter, float x, float y, float scale, float red, float green, float blue, float alpha)
+volatile void Renderer::DrawLetter(char letter, float x, float y, float width, float height, float red, float green, float blue, float alpha)
 {
     glUseProgram(GlyphProgram);
     glBindVertexArray(GlyphVAO);
@@ -134,16 +139,34 @@ volatile void Renderer::DrawLetter(char letter, float x, float y, float scale, f
     GLuint ColorLoc = glGetUniformLocation(GlyphProgram, "Color");
     glUniform4f(ColorLoc, red, green, blue, alpha);
 
-    GLuint ScaleLoc = glGetUniformLocation(GlyphProgram, "Scale");
-    glUniform1f(ScaleLoc, scale);
-
-    GLuint PosLoc = glGetUniformLocation(GlyphProgram, "Pos");
-    glUniform2f(PosLoc, x, y);
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, GlyphTextures[letter - 1]);
 
+    glViewport(x, y, width, height);
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glViewport(0, 0, RESX, RESY);
+}
+volatile void Renderer::DrawCursor(float x, float y, float width, float height, float red, float green, float blue, float alpha)
+{
+    glUseProgram(GlyphProgram);
+    glBindVertexArray(GlyphVAO);
+
+    GLuint GlyphLoc = glGetUniformLocation(GlyphProgram, "Glyph");
+    glUniform1i(GlyphLoc, 0);
+
+    GLuint ColorLoc = glGetUniformLocation(GlyphProgram, "Color");
+    glUniform4f(ColorLoc, red, green, blue, alpha);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, CursorTexture);
+
+    glViewport(x, y, width, height);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glViewport(0, 0, RESX, RESY);
 }
 volatile void Renderer::UpdateScreen()
 {

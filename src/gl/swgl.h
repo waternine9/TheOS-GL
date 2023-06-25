@@ -138,6 +138,7 @@ extern "C" {
 	void glBindTexture(GLenum target, GLuint texture);
 	void glTexParameteri(GLenum target, GLenum type, GLenum mode);
 	void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* data);
+	void glGenerateMipmap(GLenum target);
 
 	/*
 	* UNIFORM FUNCTION DECLS

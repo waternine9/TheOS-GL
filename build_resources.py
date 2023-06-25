@@ -25,5 +25,18 @@ def main():
                     r, g, b, a = surface.get_at((x, y))  # Get the RGBA values
                     f.write(bytes([r, g, b, a]))  # Write as 4 8-bit integers
 
+    cursor_file = "images/cursor.png"  # Specify your cursor file path here
+    cursor = pygame.image.load(cursor_file)
+
+    output_file = "bin/images.bin"  # Specify your output file path here
+
+    # Open the binary file for writing
+    with open(output_file, 'wb') as f:
+        # Write pixel data to file
+        for y in range(cursor.get_height()):
+            for x in range(cursor.get_width()):
+                r, g, b, a = cursor.get_at((x, y))  # Get the RGBA values
+                f.write(bytes([r, g, b, a]))  # Write as 4 8-bit integers
+
 if __name__ == "__main__":
     main()
