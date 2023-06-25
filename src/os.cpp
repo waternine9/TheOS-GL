@@ -83,7 +83,7 @@ extern "C" void kmain()
 
         Render.DrawCursor(MouseX, MouseY, 35, 35, 1.0f, 1.0f, 1.0f, 1.0f);
 
-        Render.DrawLetter('@', 0, 0, MouseX, MouseY, 0.0f, 1.0f, 0.0f, 1.0f);
+        Render.DrawLetter('L', 0, 0, MouseX, MouseY, 0.0f, 1.0f, 0.0f, 1.0f);
 
         Render.UpdateScreen();
     }
