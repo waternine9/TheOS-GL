@@ -11,7 +11,7 @@ typedef struct
 	size_t ElemSize;
 } _Vector;
 
-_Vector* NewVector(size_t _ElemSize);
+_Vector NewVector(size_t _ElemSize);
 
 void _VectorVerify(_Vector* _Vec);
 

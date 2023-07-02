@@ -1,16 +1,19 @@
 #include "memory.hpp"
+
 void memcpy(void *Destination_, const void *Source_, size_t N)
 {
     uint8_t *Destination = (uint8_t*)Destination_;
     const uint8_t *Source = (uint8_t*)Source_;
-    while (N--) {
+    while (N--) 
+    {
         *Destination++ = *Source++;
     }
 }
 void memset(void *Destination_, uint8_t Val, size_t N)
 {
     uint8_t *Destination = (uint8_t*)Destination_;
-    while (N--) {
+    while (N--) 
+    {
         *Destination++ = Val;
     }
 }
@@ -28,8 +31,6 @@ void *malloc(size_t Bytes)
             uint8_t Found = 1;
             for (int j = i;j < i + PageCount;j++)
             {
-
-
                 if (Pages[j])
                 {
                     i = j;
@@ -39,7 +40,6 @@ void *malloc(size_t Bytes)
             }
             if (Found)
             {
-
                 for (int j = i;j < i + PageCount;j++)
                 {
                     Pages[j] = 1;
@@ -49,14 +49,14 @@ void *malloc(size_t Bytes)
             }
         }
     }
-    return (uint32_t*)0;
+    return (void*)0;
 }
 void free(void *Buf)
 {
     size_t PageCount = *((volatile uint32_t*)Buf - 1) / 4096 + 1;
 
     uint32_t Page = ((uint32_t)Buf - 0x2000004) / 4096;
-    
+
     for (uint32_t i = Page;i < Page + PageCount;i++)
     {
         Pages[i] = 0;
@@ -94,8 +94,7 @@ void *memmove(void *dest, const void *src, size_t n)
     return dest;
 }
 
-int 
-strlen(const char *s)
+int  strlen(const char *s)
 {
     int len = 0;
     
@@ -103,7 +102,7 @@ strlen(const char *s)
         len++;
         s++;
     }
-
+ 
     return len;
 }
 

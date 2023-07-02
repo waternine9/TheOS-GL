@@ -3,14 +3,14 @@
 #include "vector.hpp"
 #include "../memory.hpp"
 
-_Vector* NewVector(size_t _ElemSize)
+_Vector NewVector(size_t _ElemSize)
 {
 	_Vector* _Vec = (_Vector*)malloc(sizeof(_Vector));
 	_Vec->ElemSize = _ElemSize;
 	_Vec->Cap = 128;
 	_Vec->Size = 0;
 	_Vec->Data = malloc(_Vec->ElemSize * _Vec->Cap);
-	return _Vec;
+	return *_Vec;
 }
 
 void _VectorVerify(_Vector* _Vec)

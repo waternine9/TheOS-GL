@@ -37,7 +37,7 @@ struct WindowDescriptor
 class WindowSystem
 {
 private:
-    _Vector* _Windows;
+    _Vector _Windows;
 public:
     WindowDescriptor* Focus;
     WindowSystem();

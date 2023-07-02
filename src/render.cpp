@@ -1,5 +1,6 @@
 #include "render.hpp"
 #include "kernel.hpp"
+#include "memory.hpp"
 
 #define SWGL_FREESTANDING
 #include "gl/swgl.h"
@@ -21,7 +22,7 @@ void DisplayBuffer(uint32_t* Buff)
 }
 
 static const char* BGFragShaderSource = "out vec4 OutColor;\nin vec3 FragColor;\nint main(){\nOutColor = vec4(FragColor.x, FragColor.y, FragColor.z, 1.0);\n}";
-static const char* BGVertexShaderSource = "layout(location = 0) vec3 InPos;\nlayout(location = 1) vec3 InCol;\nout vec3 FragColor;\nint main(){\ngl_Position = vec4(InPos.x, InPos.y, InPos.z, 1.0);\nFragColor = InCol.xyz;\n}";
+static const char* BGVertexShaderSource = "layout(location = 0) vec3 InPos;\nlayout(location = 1) vec3 InCol;\nout vec3 FragColor;\nuniform float Tick;\nint main(){\ngl_Position = vec4(cos(Tick) + InPos.x, sin(Tick) + InPos.y, InPos.z, 1.0);FragColor = InCol;}";
 static const char* GlyphFragShaderSource = "out vec4 OutColor;\nin vec2 UV;\nuniform vec4 Color;\nuniform sampler2D Glyph;\nint main(){\nOutColor = texture(Glyph, UV) * Color;}";
 static const char* GlyphVertexShaderSource = "layout(location = 0) vec3 InPos;\nlayout(location = 1) vec2 InUV;\nout vec2 UV;\nint main(){\ngl_Position = vec4(InPos.x, InPos.y, InPos.z, 1.0);UV = InUV;}";
 
@@ -34,10 +35,14 @@ GLuint GlyphVAO, GlyphVBO;
 GLuint GlyphTextures[256];
 GLuint CursorTexture;
 
+float BGTick;
+
 volatile void Renderer::Init()
 {
-    glInit(RESX, RESY);
+    glInit(RESX, RESY, malloc(100000), malloc(100000), malloc(100000), malloc(100000), malloc(10000));
     glViewport(0, 0, RESX, RESY);
+
+    BGTick = 0.5f;
 
     BGVertShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(BGVertShader, BGVertexShaderSource);
@@ -74,9 +79,9 @@ volatile void Renderer::Init()
     glBindBuffer(GL_ARRAY_BUFFER, BGVBO);
 
     float BGvertices[] = {
-        10.0f, 10.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-        0.0f, -10.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        -10.0f, 10.0f, 1.0f, 1.0f, 0.0f, 0.0f
+        1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        -1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f
     };
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(BGvertices), BGvertices, GL_STATIC_DRAW);
@@ -126,9 +131,17 @@ volatile void Renderer::DrawBackground()
 {
     glUseProgram(BGProgram);
     glBindVertexArray(BGVAO);
+
+    GLuint TickLoc = glGetUniformLocation(BGProgram, "Tick");
+
+
+    glUniform1f(TickLoc, BGTick);
+
+    BGTick += 0.2f;
+
     glDrawArrays(GL_TRIANGLES, 0, 3);
 }
-volatile void Renderer::DrawLetter(char letter, float x, float y, float width, float height, float red, float green, float blue, float alpha)
+volatile void Renderer::DrawLetter(uint8_t letter, float x, float y, float width, float height, float red, float green, float blue, float alpha)
 {
     glUseProgram(GlyphProgram);
     glBindVertexArray(GlyphVAO);

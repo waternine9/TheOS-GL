@@ -53,37 +53,35 @@ extern "C" void kmain()
     Render = Renderer();
 
     Render.Init();
-    
+
 
     uint32_t KeysCount = 0;
 
     WindowSystem Windowing = WindowSystem();
 
-    WindowDescriptor* CmdWindow0 = App_GlTestNewWindow();
-    WindowDescriptor* CmdWindow1 = App_CmdNewWindow();
+    //WindowDescriptor* CmdWindow0 = App_GlTestNewWindow();
+    //WindowDescriptor* CmdWindow1 = App_CmdNewWindow();
 
-    Windowing.AddWindow(CmdWindow0);
-    Windowing.AddWindow(CmdWindow1);
+    //Windowing.AddWindow(CmdWindow0);
+    //Windowing.AddWindow(CmdWindow1);
 
-    CmdWindow1->X = MouseX;
-    CmdWindow1->Y = MouseY;
+    //CmdWindow1->X = MouseX;
+    //CmdWindow1->Y = MouseY;
 
     while (true)
     {
-        CmdWindow0->X = MouseX;
-        CmdWindow0->Y = MouseY;
+        //CmdWindow0->X = MouseX;
+        //CmdWindow0->Y = MouseY;
 
-        Render.ClearScreen(1.0, 1.0, 1.0, 1.0);
-        Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
+        Render.ClearScreen(0.2, 0.2, 0.2, 1.0);
+        //Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
         for (int i = 0; i < KeysCount; i++)
         {
-            Windowing.HandleKeyPress(Keys[i]);
+            //Windowing.HandleKeyPress(Keys[i]);
         }
-        Windowing.Tick();
-
-        Render.DrawCursor(MouseX, MouseY, 35, 35, 1.0f, 1.0f, 1.0f, 1.0f);
-
-        Render.DrawLetter('L', 0, 0, MouseX, MouseY, 0.0f, 1.0f, 0.0f, 1.0f);
+        //Windowing.Tick();
+        //Render.DrawLetter('a', 0, 0, 80, 160, 1.0f, 1.0f, 1.0f, 1.0f);
+        Render.DrawCursor(MouseX, MouseY, 32, 48, 1.0f, 1.0f, 1.0f, 1.0f);
 
         Render.UpdateScreen();
     }

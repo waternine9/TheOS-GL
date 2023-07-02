@@ -58,7 +58,7 @@ WindowSystem::WindowSystem()
 
 void WindowSystem::AddWindow(WindowDescriptor* Window)
 {
-    VectorPushBack(_Windows, &Window);
+    VectorPushBack(&_Windows, &Window);
 }
 
 void WindowSystem::HandleClick()
@@ -68,13 +68,13 @@ void WindowSystem::HandleClick()
 
 void WindowSystem::Tick()
 {
-    if (_Windows->Size > 0) VectorRead(_Windows, &Focus, _Windows->Size - 1);
+    if (_Windows.Size > 0) VectorRead(&_Windows, &Focus, _Windows.Size - 1);
     else Focus = 0;
 
-    for (int i = 0;i < _Windows->Size;i++)
+    for (int i = 0;i < _Windows.Size;i++)
     {
         WindowDescriptor* Window;
-        VectorRead(_Windows, &Window, i);
+        VectorRead(&_Windows, &Window, i);
 
         
 

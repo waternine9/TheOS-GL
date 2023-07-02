@@ -29,8 +29,6 @@ SetupVbe:
     or    eax, 1
     mov   cr0, eax
 
-
-
     jmp   8:After
 
 global DriveNumber
@@ -69,6 +67,15 @@ After:
     mov   fs, ax
     mov   gs, ax
     mov   ss, ax
+
+    mov eax, cr0
+    or ax, 0x2        ; Set CR0.MP (bit 1)
+    and ax, 0xFFFB
+    mov cr0, eax
+
+    mov eax, cr4
+    or ax, 0x600      ; Set CR4.OSFXSR and CR4.OSXMMEXCPT (bits 9 and 10)
+    mov cr4, eax
 
     mov eax, unkernel_end
     mov esp, eax
